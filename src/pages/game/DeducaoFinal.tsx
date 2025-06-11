@@ -9,10 +9,18 @@ import { Badge } from '@/components/ui/badge';
 import { Gavel, Users, FileText, AlertTriangle, CheckCircle } from 'lucide-react';
 
 const DeducaoFinal = () => {
-  const { gameState, fazerAcusacao } = useGame();
+  const { gameState, confirmarAcusacao } = useGame();
   const [suspeitoSelecionado, setSuspeitoSelecionado] = useState<string>('');
   const [evidenciasSelecionadas, setEvidenciasSelecionadas] = useState<string[]>([]);
   const [resultadoAcusacao, setResultadoAcusacao] = useState<string | null>(null);
+
+  // Convert suspeitos object to array for rendering
+  const suspeitosDisponiveis = [
+    { id: 'donoCabare', nome: 'Dono do Cabaré', profissao: 'Empresário', disponivel: gameState.suspeitosDesbloqueados.donoCabare },
+    { id: 'exAmante', nome: 'Ex-Amante', profissao: 'Músico', disponivel: gameState.suspeitosDesbloqueados.exAmante },
+    { id: 'cantoraRival', nome: 'Cantora Rival', profissao: 'Artista', disponivel: gameState.suspeitosDesbloqueados.cantoraRival },
+    { id: 'pianista', nome: 'Pianista', profissao: 'Músico', disponivel: gameState.suspeitosDesbloqueados.pianista },
+  ].filter(suspeito => suspeito.disponivel);
 
   const handleSelecionarEvidencia = (evidenciaId: string) => {
     setEvidenciasSelecionadas(prev => {
@@ -27,8 +35,22 @@ const DeducaoFinal = () => {
 
   const handleEnviarAcusacao = () => {
     if (suspeitoSelecionado && evidenciasSelecionadas.length >= 2) {
-      const resultado = fazerAcusacao(suspeitoSelecionado, evidenciasSelecionadas);
-      setResultadoAcusacao(resultado);
+      const resultado = confirmarAcusacao(suspeitoSelecionado, evidenciasSelecionadas);
+      
+      let mensagemResultado = '';
+      switch (resultado) {
+        case 'aceita':
+          mensagemResultado = 'Prisão aceita: O juiz emitiu o mandado de prisão baseado nas evidências apresentadas.';
+          break;
+        case 'negada':
+          mensagemResultado = 'Prisão negada: O juiz considerou que as provas apresentadas não fundamentam uma acusação sólida.';
+          break;
+        case 'limite_excedido':
+          mensagemResultado = 'Caso arquivado: Muitas tentativas fracassadas levaram ao arquivamento da investigação.';
+          break;
+      }
+      
+      setResultadoAcusacao(mensagemResultado);
     }
   };
 
@@ -95,7 +117,7 @@ const DeducaoFinal = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {gameState.suspeitosDesbloqueados.map((suspeito) => (
+                    {suspeitosDisponiveis.map((suspeito) => (
                       <button
                         key={suspeito.id}
                         onClick={() => setSuspeitoSelecionado(suspeito.id)}
@@ -134,33 +156,42 @@ const DeducaoFinal = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {gameState.inventario.map((evidencia) => (
-                      <button
-                        key={evidencia.id}
-                        onClick={() => handleSelecionarEvidencia(evidencia.id)}
-                        className={`w-full p-3 rounded-lg border transition-all text-left ${
-                          evidenciasSelecionadas.includes(evidencia.id)
-                            ? 'border-noir-gold bg-noir-gold/10'
-                            : 'border-gray-600 hover:border-gray-500 bg-gray-800/50'
-                        }`}
-                      >
-                        <div className="flex items-start space-x-3">
-                          <div className="flex-shrink-0">
-                            <Badge variant="outline" className="text-xs">
-                              {evidencia.categoria}
-                            </Badge>
+                    {gameState.inventario && gameState.inventario.length > 0 ? (
+                      gameState.inventario.map((evidencia) => (
+                        <button
+                          key={evidencia.id}
+                          onClick={() => handleSelecionarEvidencia(evidencia.id)}
+                          className={`w-full p-3 rounded-lg border transition-all text-left ${
+                            evidenciasSelecionadas.includes(evidencia.id)
+                              ? 'border-noir-gold bg-noir-gold/10'
+                              : 'border-gray-600 hover:border-gray-500 bg-gray-800/50'
+                          }`}
+                        >
+                          <div className="flex items-start space-x-3">
+                            <div className="flex-shrink-0">
+                              <Badge variant="outline" className="text-xs">
+                                {evidencia.categoria}
+                              </Badge>
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-garamond text-sm font-semibold text-noir-light">
+                                {evidencia.nome}
+                              </h4>
+                              <p className="font-inter text-xs text-gray-400 line-clamp-2">
+                                {evidencia.descricao}
+                              </p>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <h4 className="font-garamond text-sm font-semibold text-noir-light">
-                              {evidencia.nome}
-                            </h4>
-                            <p className="font-inter text-xs text-gray-400 line-clamp-2">
-                              {evidencia.descricao}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                        <p className="text-gray-400 font-inter">
+                          Nenhuma evidência coletada ainda.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -179,7 +210,7 @@ const DeducaoFinal = () => {
                     <span className="text-gray-400">Suspeito:</span>
                     <span className="text-noir-light ml-2">
                       {suspeitoSelecionado ? 
-                        gameState.suspeitosDesbloqueados.find(s => s.id === suspeitoSelecionado)?.nome 
+                        suspeitosDisponiveis.find(s => s.id === suspeitoSelecionado)?.nome 
                         : 'Nenhum selecionado'}
                     </span>
                   </div>

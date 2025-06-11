@@ -26,7 +26,9 @@ const DiarioModal: React.FC<DiarioModalProps> = ({ isOpen, onClose }) => {
     { id: 'analise', nome: 'Análises', icone: Clock },
   ];
 
-  const entradasFiltradas = gameState.logNarrativo.filter(entrada => 
+  // Fix: Add safety check for logNarrativo
+  const logNarrativo = gameState.logNarrativo || [];
+  const entradasFiltradas = logNarrativo.filter(entrada => 
     filtroCategoria === 'todos' || entrada.categoria === filtroCategoria
   );
 
@@ -122,7 +124,7 @@ const DiarioModal: React.FC<DiarioModalProps> = ({ isOpen, onClose }) => {
           <div className="mt-4 p-3 bg-gray-900/50 rounded-lg">
             <div className="flex justify-between items-center text-sm">
               <span className="font-inter text-gray-400">
-                Total de entradas: {gameState.logNarrativo.length}
+                Total de entradas: {logNarrativo.length}
               </span>
               <span className="font-inter text-gray-400">
                 Investigação: Dia {gameState.diaAtual}
