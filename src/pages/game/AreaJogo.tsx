@@ -1,16 +1,40 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useGame } from '@/contexts/GameContext';
 import GameLayout from '@/components/game/GameLayout';
 import { areas } from '@/data/gameData';
-import { CheckCircle, Clock, ArrowRight } from 'lucide-react';
+import { CheckCircle, Clock, ArrowRight, MapPin } from 'lucide-react';
 
 const AreaJogo = () => {
   const { areaId } = useParams<{ areaId: string }>();
-  const { gameState, executarAcao } = useGame();
+  const { gameState, executarAcao, moverPara, adicionarEntradaDiario } = useGame();
 
   const area = areas.find(a => a.id === areaId);
+
+  // Atualiza localização atual quando entra na área
+  useEffect(() => {
+    if (areaId && gameState.localAtual !== areaId) {
+      moverPara(areaId);
+    }
+  }, [areaId, gameState.localAtual, moverPara]);
+
+  // Adiciona entrada no diário ao entrar na área
+  useEffect(() => {
+    if (area && gameState.localAtual === areaId) {
+      adicionarEntradaDiario({
+        texto: `Chegou em ${area.nome}. ${area.descricao}`,
+        dia: gameState.diaAtual,
+        hora: getCurrentTime(),
+        categoria: 'movimento'
+      });
+    }
+  }, [area, areaId, gameState.localAtual]);
+
+  const getCurrentTime = (): string => {
+    const horas = 8 + (5 - gameState.energiaAtual) * 2;
+    return `${horas.toString().padStart(2, '0')}:00`;
+  };
 
   if (!area) {
     return (
@@ -26,6 +50,17 @@ const AreaJogo = () => {
 
   return (
     <GameLayout title={area.nome} showBackButton>
+      {/* Indicador de Localização */}
+      <div className="bg-noir-gold/10 border-b border-noir-gold/20 py-2">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center space-x-2 text-sm">
+            <MapPin className="w-4 h-4 text-noir-gold" />
+            <span className="text-noir-gold font-medium">Localização atual:</span>
+            <span className="text-noir-light font-garamond">{area.nome}</span>
+          </div>
+        </div>
+      </div>
+
       {/* Header da Área */}
       <section className="relative h-64 overflow-hidden">
         <img
@@ -75,11 +110,11 @@ const AreaJogo = () => {
                 return (
                   <div
                     key={acao.id}
-                    className={`bg-gray-900 border rounded-lg p-6 ${
+                    className={`border rounded-lg p-6 transition-all duration-300 ${
                       jaRealizada 
-                        ? 'border-green-600/40 opacity-75' 
-                        : 'border-noir-gold/20 hover:border-noir-gold/40'
-                    } transition-all duration-300`}
+                        ? 'bg-gray-900/50 border-green-600/40 opacity-75' 
+                        : 'bg-gray-900 border-noir-gold/20 hover:border-noir-gold/40 hover:bg-gray-800/50'
+                    }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -95,15 +130,28 @@ const AreaJogo = () => {
                           {acao.descricao}
                         </p>
                         {jaRealizada && (
-                          <p className="font-inter text-sm text-green-400 mb-4">
-                            ✓ Ação já realizada
-                          </p>
+                          <div className="bg-green-900/20 border border-green-600/40 rounded p-3 mb-4">
+                            <p className="font-inter text-sm text-green-400 flex items-center space-x-2">
+                              <CheckCircle className="w-4 h-4" />
+                              <span>Ação já realizada</span>
+                            </p>
+                          </div>
+                        )}
+                        
+                        {/* Custo de energia */}
+                        {!jaRealizada && (
+                          <div className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
+                            <span>Custo:</span>
+                            <span className="bg-noir-gold/20 text-noir-gold px-2 py-1 rounded text-xs">
+                              1 Energia
+                            </span>
+                          </div>
                         )}
                       </div>
                       {!jaRealizada && (
                         <Link
                           to={`/jogo/acao/${areaId}/${acao.id}`}
-                          className="bg-noir-red hover:bg-noir-red/90 text-noir-light px-4 py-2 rounded font-inter font-medium transition-colors flex items-center space-x-2"
+                          className="bg-noir-red hover:bg-noir-red/90 text-noir-light px-4 py-2 rounded font-inter font-medium transition-colors flex items-center space-x-2 min-w-fit"
                         >
                           <span>Investigar</span>
                           <ArrowRight className="w-4 h-4" />
@@ -115,6 +163,26 @@ const AreaJogo = () => {
               })}
             </div>
           )}
+
+          {/* Resumo da área */}
+          <div className="mt-8 bg-gray-900/30 border border-gray-700 rounded-lg p-6">
+            <h3 className="font-garamond text-lg font-semibold text-noir-light mb-3">
+              Progresso nesta Área
+            </h3>
+            <div className="flex items-center justify-between">
+              <span className="font-inter text-gray-300">
+                Ações realizadas: {area.acoes.filter(acao => acoesJaRealizadas.includes(acao.id)).length} de {area.acoes.length}
+              </span>
+              <div className="w-32 bg-gray-700 rounded-full h-2">
+                <div 
+                  className="bg-noir-gold h-2 rounded-full transition-all duration-300"
+                  style={{ 
+                    width: `${(area.acoes.filter(acao => acoesJaRealizadas.includes(acao.id)).length / area.acoes.length) * 100}%` 
+                  }}
+                ></div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </GameLayout>

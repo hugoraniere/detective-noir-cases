@@ -1,8 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useGame } from '@/contexts/GameContext';
-import { ArrowLeft, Battery, Calendar, Lightbulb } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { ArrowLeft, Battery, Calendar, Lightbulb, BookOpen, Package, LogOut } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import SairJogoModal from './SairJogoModal';
+import DiarioModal from './DiarioModal';
+import InventarioModal from './InventarioModal';
 
 interface GameLayoutProps {
   children: React.ReactNode;
@@ -17,10 +20,21 @@ const GameLayout: React.FC<GameLayoutProps> = ({
   showBackButton = false, 
   backTo = '/jogo/painel' 
 }) => {
-  const { gameState, getTotalPistas, podeAcessarDeducao } = useGame();
+  const { gameState, getTotalPistas, podeAcessarDeducao, resetarJogo } = useGame();
   const location = useLocation();
+  const navigate = useNavigate();
+  
+  const [showSairModal, setShowSairModal] = useState(false);
+  const [showDiarioModal, setShowDiarioModal] = useState(false);
+  const [showInventarioModal, setShowInventarioModal] = useState(false);
 
   const isInGame = location.pathname.startsWith('/jogo/');
+
+  const handleSairJogo = () => {
+    resetarJogo();
+    navigate('/');
+    setShowSairModal(false);
+  };
 
   if (!isInGame || !gameState.jogoIniciado) {
     return <div className="min-h-screen bg-noir-dark">{children}</div>;
@@ -49,7 +63,35 @@ const GameLayout: React.FC<GameLayoutProps> = ({
               )}
             </div>
 
-            {/* Right side - Game status */}
+            {/* Center - Game Tools */}
+            <div className="flex items-center space-x-3">
+              {/* Diário */}
+              <button
+                onClick={() => setShowDiarioModal(true)}
+                className="flex items-center space-x-2 px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition-colors"
+                title="Diário do Detetive"
+              >
+                <BookOpen className="w-4 h-4" />
+                <span className="text-sm font-medium">Diário</span>
+              </button>
+
+              {/* Inventário */}
+              <button
+                onClick={() => setShowInventarioModal(true)}
+                className="flex items-center space-x-2 px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition-colors"
+                title="Inventário de Evidências"
+              >
+                <Package className="w-4 h-4" />
+                <span className="text-sm font-medium">Evidências</span>
+                {gameState.inventario.length > 0 && (
+                  <span className="bg-noir-gold text-noir-dark text-xs px-1.5 py-0.5 rounded-full">
+                    {gameState.inventario.length}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Right side - Game status and actions */}
             <div className="flex items-center space-x-6">
               {/* Pistas coletadas */}
               <div className="flex items-center space-x-2">
@@ -84,6 +126,16 @@ const GameLayout: React.FC<GameLayoutProps> = ({
                   Dedução Final
                 </Link>
               )}
+
+              {/* Sair do Jogo */}
+              <button
+                onClick={() => setShowSairModal(true)}
+                className="flex items-center space-x-1 text-gray-400 hover:text-red-400 transition-colors"
+                title="Sair do Jogo"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="text-sm">Sair</span>
+              </button>
             </div>
           </div>
         </div>
@@ -93,6 +145,23 @@ const GameLayout: React.FC<GameLayoutProps> = ({
       <main className="pb-8">
         {children}
       </main>
+
+      {/* Modals */}
+      <SairJogoModal
+        isOpen={showSairModal}
+        onClose={() => setShowSairModal(false)}
+        onConfirm={handleSairJogo}
+      />
+
+      <DiarioModal
+        isOpen={showDiarioModal}
+        onClose={() => setShowDiarioModal(false)}
+      />
+
+      <InventarioModal
+        isOpen={showInventarioModal}
+        onClose={() => setShowInventarioModal(false)}
+      />
     </div>
   );
 };

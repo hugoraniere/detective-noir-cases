@@ -1,9 +1,31 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+export interface Evidencia {
+  id: string;
+  nome: string;
+  descricao: string;
+  categoria: 'Fisica' | 'Testemunhal' | 'Documental';
+  imagem?: string;
+  coletadaEm: string; // local onde foi coletada
+  diaColetada: number;
+}
+
+export interface EntradaDiario {
+  id: string;
+  texto: string;
+  dia: number;
+  hora: string;
+  categoria: 'descoberta' | 'interrogatorio' | 'movimento' | 'analise';
+}
+
 export interface GameState {
   energiaAtual: number;
   diaAtual: number;
+  localAtual: string;
+  inventario: Evidencia[];
+  logNarrativo: EntradaDiario[];
+  tentativasDePrisao: number;
   pistasEncontradas: {
     copoQuebrado: boolean;
     partituraRasgada: boolean;
@@ -34,11 +56,14 @@ interface GameContextType {
   gameState: GameState;
   iniciarJogo: () => void;
   executarAcao: (acaoId: string) => void;
+  moverPara: (novoLocal: string) => boolean;
   encerrarDia: () => void;
   coletarPista: (pista: keyof GameState['pistasEncontradas']) => void;
+  coletarEvidencia: (evidencia: Evidencia) => void;
+  adicionarEntradaDiario: (entrada: Omit<EntradaDiario, 'id'>) => void;
   desbloquearSuspeito: (suspeito: keyof GameState['suspeitosDesbloqueados']) => void;
   desbloquearArea: (area: keyof GameState['areasDesbloqueadas']) => void;
-  confirmarAcusacao: (suspeito: string) => void;
+  confirmarAcusacao: (suspeito: string, evidencias: string[]) => 'aceita' | 'negada' | 'limite_excedido';
   resetarJogo: () => void;
   getTotalPistas: () => number;
   podeAcessarDeducao: () => boolean;
@@ -49,6 +74,10 @@ const GameContext = createContext<GameContextType | undefined>(undefined);
 const initialGameState: GameState = {
   energiaAtual: 5,
   diaAtual: 1,
+  localAtual: 'cenaCrime',
+  inventario: [],
+  logNarrativo: [],
+  tentativasDePrisao: 0,
   pistasEncontradas: {
     copoQuebrado: false,
     partituraRasgada: false,
@@ -86,7 +115,18 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   }, [gameState]);
 
   const iniciarJogo = () => {
-    setGameState({ ...initialGameState, jogoIniciado: true });
+    const estadoInicial = { 
+      ...initialGameState, 
+      jogoIniciado: true,
+      logNarrativo: [{
+        id: 'inicio',
+        texto: 'A investigação do assassinato de Carmem Bittencourt teve início. O corpo foi encontrado no camarim do Cabaré Lua Azul.',
+        dia: 1,
+        hora: '08:00',
+        categoria: 'descoberta' as const
+      }]
+    };
+    setGameState(estadoInicial);
   };
 
   const executarAcao = (acaoId: string) => {
@@ -99,12 +139,57 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
+  const moverPara = (novoLocal: string): boolean => {
+    if (gameState.energiaAtual <= 0) return false;
+    if (gameState.localAtual === novoLocal) return true;
+    
+    setGameState(prev => ({
+      ...prev,
+      energiaAtual: prev.energiaAtual - 1,
+      localAtual: novoLocal,
+    }));
+
+    // Adiciona entrada no diário sobre movimento
+    const nomeLocal = getLocalName(novoLocal);
+    adicionarEntradaDiario({
+      texto: `Deslocou-se para ${nomeLocal}.`,
+      dia: gameState.diaAtual,
+      hora: getCurrentTime(),
+      categoria: 'movimento'
+    });
+
+    return true;
+  };
+
+  const getLocalName = (localId: string): string => {
+    const nomes: Record<string, string> = {
+      cenaCrime: 'Cena do Crime',
+      delegacia: 'Delegacia',
+      cabare: 'Cabaré Lua Azul',
+      casaVitima: 'Casa de Carmem',
+      arquivoPublico: 'Arquivo Público'
+    };
+    return nomes[localId] || localId;
+  };
+
+  const getCurrentTime = (): string => {
+    const horas = 8 + (5 - gameState.energiaAtual) * 2;
+    return `${horas.toString().padStart(2, '0')}:00`;
+  };
+
   const encerrarDia = () => {
     setGameState(prev => ({
       ...prev,
       diaAtual: prev.diaAtual + 1,
       energiaAtual: 5,
     }));
+
+    adicionarEntradaDiario({
+      texto: `Fim do Dia ${gameState.diaAtual}. O detetive descansou e recuperou suas energias.`,
+      dia: gameState.diaAtual,
+      hora: '22:00',
+      categoria: 'movimento'
+    });
   };
 
   const coletarPista = (pista: keyof GameState['pistasEncontradas']) => {
@@ -114,6 +199,32 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         ...prev.pistasEncontradas,
         [pista]: true,
       },
+    }));
+  };
+
+  const coletarEvidencia = (evidencia: Evidencia) => {
+    setGameState(prev => ({
+      ...prev,
+      inventario: [...prev.inventario, evidencia],
+    }));
+
+    adicionarEntradaDiario({
+      texto: `Coletou evidência: ${evidencia.nome} - ${evidencia.descricao}`,
+      dia: gameState.diaAtual,
+      hora: getCurrentTime(),
+      categoria: 'descoberta'
+    });
+  };
+
+  const adicionarEntradaDiario = (entrada: Omit<EntradaDiario, 'id'>) => {
+    const novaEntrada: EntradaDiario = {
+      ...entrada,
+      id: `entrada_${Date.now()}_${Math.random()}`
+    };
+
+    setGameState(prev => ({
+      ...prev,
+      logNarrativo: [...prev.logNarrativo, novaEntrada],
     }));
   };
 
@@ -137,15 +248,34 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
-  const confirmarAcusacao = (suspeito: string) => {
-    const totalPistas = getTotalPistas();
-    const pontuacao = calcularPontuacao(totalPistas, gameState.diaAtual, suspeito === 'exAmante');
+  const confirmarAcusacao = (suspeito: string, evidencias: string[]): 'aceita' | 'negada' | 'limite_excedido' => {
+    const novasTentativas = gameState.tentativasDePrisao + 1;
     
+    if (novasTentativas > 3) {
+      return 'limite_excedido';
+    }
+
     setGameState(prev => ({
       ...prev,
-      acusadoFinal: suspeito,
-      pontuacaoFinal: pontuacao,
+      tentativasDePrisao: novasTentativas,
     }));
+
+    // Lógica de avaliação baseada no culpado real e evidências
+    const culpadoReal = 'exAmante'; // Ricardo Silva
+    const evidenciasNecessarias = ['copoQuebrado', 'partituraRasgada', 'cartaOculta'];
+    
+    const temEvidenciasSuficientes = evidenciasNecessarias.some(ev => evidencias.includes(ev)) && evidencias.length >= 2;
+    
+    if (suspeito === culpadoReal && temEvidenciasSuficientes) {
+      setGameState(prev => ({
+        ...prev,
+        acusadoFinal: suspeito,
+        pontuacaoFinal: calcularPontuacao(getTotalPistas(), gameState.diaAtual, true),
+      }));
+      return 'aceita';
+    } else {
+      return 'negada';
+    }
   };
 
   const resetarJogo = () => {
@@ -174,8 +304,11 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       gameState,
       iniciarJogo,
       executarAcao,
+      moverPara,
       encerrarDia,
       coletarPista,
+      coletarEvidencia,
+      adicionarEntradaDiario,
       desbloquearSuspeito,
       desbloquearArea,
       confirmarAcusacao,
