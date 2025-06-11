@@ -83,7 +83,7 @@ const GameLayout: React.FC<GameLayoutProps> = ({
               >
                 <Package className="w-4 h-4" />
                 <span className="text-sm font-medium">Evidências</span>
-                {gameState.inventario.length > 0 && (
+                {gameState.inventario && gameState.inventario.length > 0 && (
                   <span className="bg-noir-gold text-noir-dark text-xs px-1.5 py-0.5 rounded-full">
                     {gameState.inventario.length}
                   </span>
