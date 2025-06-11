@@ -202,7 +202,7 @@ const PainelInvestigador = () => {
               </h3>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {areas
-                  .filter(area => !gameState.areasDesbloqueadas[area.id as keyof typeof gameState.areasDesbloqueados])
+                  .filter(area => !gameState.areasDesbloqueadas[area.id as keyof typeof gameState.areasDesbloqueadas])
                   .map((area) => (
                     <div
                       key={area.id}
