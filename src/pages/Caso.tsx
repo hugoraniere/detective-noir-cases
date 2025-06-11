@@ -1,5 +1,4 @@
-
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { getCasoBySlug } from '@/data/casos';
@@ -7,6 +6,7 @@ import { ArrowLeft, Play, Clock, Users, Shield, MapPin, Calendar } from 'lucide-
 
 const Caso = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const caso = slug ? getCasoBySlug(slug) : undefined;
 
   if (!caso) {
@@ -32,6 +32,12 @@ const Caso = () => {
   }
 
   const isDisponivel = caso.status === 'disponivel';
+
+  const handleJogarAgora = () => {
+    if (caso.slug === 'a-ultima-cancao-da-lapa') {
+      navigate('/jogo/a-ultima-cancao-da-lapa');
+    }
+  };
 
   const getDifficultyText = (level: number) => {
     const levels = ['Muito Fácil', 'Fácil', 'Médio', 'Difícil', 'Muito Difícil'];
@@ -131,7 +137,10 @@ const Caso = () => {
                 </p>
                 
                 {isDisponivel ? (
-                  <button className="w-full bg-noir-red hover:bg-noir-red/90 text-noir-light px-6 py-4 rounded font-inter text-lg font-semibold transition-all duration-300 flex items-center justify-center space-x-2 hover:scale-105">
+                  <button 
+                    onClick={handleJogarAgora}
+                    className="w-full bg-noir-red hover:bg-noir-red/90 text-noir-light px-6 py-4 rounded font-inter text-lg font-semibold transition-all duration-300 flex items-center justify-center space-x-2 hover:scale-105"
+                  >
                     <Play className="w-5 h-5" />
                     <span>Jogar Agora</span>
                   </button>
