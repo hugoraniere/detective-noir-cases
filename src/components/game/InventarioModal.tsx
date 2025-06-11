@@ -26,7 +26,9 @@ const InventarioModal: React.FC<InventarioModalProps> = ({ isOpen, onClose }) =>
     { id: 'Documental', nome: 'Documental', icone: FileText },
   ];
 
-  const evidenciasFiltradas = gameState.inventario.filter(evidencia => 
+  // Fix: Add safety check for inventario
+  const inventario = gameState.inventario || [];
+  const evidenciasFiltradas = inventario.filter(evidencia => 
     filtroCategoria === 'todos' || evidencia.categoria === filtroCategoria
   );
 
@@ -40,7 +42,7 @@ const InventarioModal: React.FC<InventarioModalProps> = ({ isOpen, onClose }) =>
   };
 
   const evidenciaDetalhada = evidenciaSelecionada 
-    ? gameState.inventario.find(e => e.id === evidenciaSelecionada)
+    ? inventario.find(e => e.id === evidenciaSelecionada)
     : null;
 
   return (
@@ -196,7 +198,7 @@ const InventarioModal: React.FC<InventarioModalProps> = ({ isOpen, onClose }) =>
         <div className="mt-4 p-3 bg-gray-900/50 rounded-lg">
           <div className="flex justify-between items-center text-sm">
             <span className="font-inter text-gray-400">
-              Evidências coletadas: {gameState.inventario.length}
+              Evidências coletadas: {inventario.length}
             </span>
             <span className="font-inter text-gray-400">
               Clique em uma evidência para ver detalhes
