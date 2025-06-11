@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FileText, Users, Hammer } from 'lucide-react';
+import { FileText, Users, Hammer, Sparkles } from 'lucide-react';
 import { Evidencia } from '@/contexts/GameContext';
 
 interface EvidenceCardProps {
@@ -39,23 +39,31 @@ const EvidenceCard: React.FC<EvidenceCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`p-4 border rounded-lg cursor-pointer transition-all hover:scale-105 ${
+      className={`relative p-4 border rounded-lg cursor-pointer transition-all hover:scale-105 ${
         isSelected
-          ? 'border-noir-gold bg-noir-gold/10'
+          ? 'border-noir-gold bg-noir-gold/10 shadow-lg shadow-noir-gold/20'
           : `${getCategoriaColor(evidencia.categoria)} hover:border-noir-gold/40`
       }`}
     >
-      {/* Imagem placeholder */}
-      <div className="w-full h-24 bg-gray-800 rounded mb-3 flex items-center justify-center">
+      {/* Novo indicador */}
+      <div className="absolute top-2 right-2">
+        <Sparkles className="w-4 h-4 text-noir-gold animate-pulse" />
+      </div>
+
+      {/* Imagem ou ícone da evidência */}
+      <div className="w-full h-24 bg-gradient-to-br from-gray-800 to-gray-900 rounded mb-3 flex items-center justify-center border border-gray-700">
         {evidencia.imagem ? (
           <img 
             src={evidencia.imagem} 
             alt={evidencia.nome}
-            className="w-full h-full object-cover rounded"
+            className="w-full h-full object-cover rounded sepia"
           />
         ) : (
-          <div className="text-gray-500 text-xs">
+          <div className="text-gray-500 text-xs flex flex-col items-center space-y-1">
             {getCategoryIcon(evidencia.categoria)}
+            <span className="text-xs font-medium">
+              {evidencia.categoria}
+            </span>
           </div>
         )}
       </div>
@@ -65,16 +73,27 @@ const EvidenceCard: React.FC<EvidenceCardProps> = ({
         {evidencia.nome}
       </h3>
       
-      <p className="font-inter text-xs text-gray-400 line-clamp-2">
+      <p className="font-inter text-xs text-gray-400 line-clamp-2 mb-2">
         {evidencia.descricao}
       </p>
 
-      {/* Badge da categoria */}
-      <div className="mt-2">
-        <span className={`text-xs px-2 py-1 rounded ${getCategoriaColor(evidencia.categoria)}`}>
+      {/* Local de coleta */}
+      <div className="text-xs text-gray-500 mb-2">
+        Coletada em: {evidencia.coletadaEm}
+      </div>
+
+      {/* Badge da categoria com estilo melhorado */}
+      <div className="flex justify-between items-center">
+        <span className={`text-xs px-2 py-1 rounded border ${getCategoriaColor(evidencia.categoria)}`}>
           {evidencia.categoria}
         </span>
+        <span className="text-xs text-gray-500">
+          Dia {evidencia.diaColetada}
+        </span>
       </div>
+
+      {/* Efeito vintage */}
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-sepia-900/10 rounded-lg pointer-events-none"></div>
     </div>
   );
 };

@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
 import { useGame } from '@/contexts/GameContext';
-import { ArrowLeft, Battery, Calendar, Lightbulb, BookOpen, Package, LogOut } from 'lucide-react';
+import { ArrowLeft, Battery, Calendar, Lightbulb, BookOpen, Package, LogOut, Map, Users } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import SairJogoModal from './SairJogoModal';
 import DiarioModal from './DiarioModal';
 import InventarioModal from './InventarioModal';
+import MapaModal from './MapaModal';
+import SuspeitosModal from './SuspeitosModal';
 
 interface GameLayoutProps {
   children: React.ReactNode;
@@ -27,6 +29,8 @@ const GameLayout: React.FC<GameLayoutProps> = ({
   const [showSairModal, setShowSairModal] = useState(false);
   const [showDiarioModal, setShowDiarioModal] = useState(false);
   const [showInventarioModal, setShowInventarioModal] = useState(false);
+  const [showMapaModal, setShowMapaModal] = useState(false);
+  const [showSuspeitosModal, setShowSuspeitosModal] = useState(false);
 
   const isInGame = location.pathname.startsWith('/jogo/');
 
@@ -65,6 +69,26 @@ const GameLayout: React.FC<GameLayoutProps> = ({
 
             {/* Center - Game Tools */}
             <div className="flex items-center space-x-3">
+              {/* Mapa */}
+              <button
+                onClick={() => setShowMapaModal(true)}
+                className="flex items-center space-x-2 px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition-colors"
+                title="Mapa da Lapa"
+              >
+                <Map className="w-4 h-4" />
+                <span className="text-sm font-medium">Mapa</span>
+              </button>
+
+              {/* Suspeitos */}
+              <button
+                onClick={() => setShowSuspeitosModal(true)}
+                className="flex items-center space-x-2 px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition-colors"
+                title="Suspeitos Identificados"
+              >
+                <Users className="w-4 h-4" />
+                <span className="text-sm font-medium">Suspeitos</span>
+              </button>
+
               {/* Diário */}
               <button
                 onClick={() => setShowDiarioModal(true)}
@@ -93,14 +117,6 @@ const GameLayout: React.FC<GameLayoutProps> = ({
 
             {/* Right side - Game status and actions */}
             <div className="flex items-center space-x-6">
-              {/* Pistas coletadas */}
-              <div className="flex items-center space-x-2">
-                <Lightbulb className="w-4 h-4 text-noir-gold" />
-                <span className="font-inter text-sm text-noir-light">
-                  {getTotalPistas()}/5 pistas
-                </span>
-              </div>
-
               {/* Energia */}
               <div className="flex items-center space-x-2">
                 <Battery className="w-4 h-4 text-noir-gold" />
@@ -161,6 +177,16 @@ const GameLayout: React.FC<GameLayoutProps> = ({
       <InventarioModal
         isOpen={showInventarioModal}
         onClose={() => setShowInventarioModal(false)}
+      />
+
+      <MapaModal
+        isOpen={showMapaModal}
+        onClose={() => setShowMapaModal(false)}
+      />
+
+      <SuspeitosModal
+        isOpen={showSuspeitosModal}
+        onClose={() => setShowSuspeitosModal(false)}
       />
     </div>
   );

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useGame } from '@/contexts/GameContext';
 import GameLayout from '@/components/game/GameLayout';
 import { areas } from '@/data/gameData';
-import { MapPin, Lock, ArrowRight, Zap, AlertCircle } from 'lucide-react';
+import { MapPin, Lock, ArrowRight, Zap, AlertCircle, Calendar } from 'lucide-react';
 
 const PainelInvestigador = () => {
   const { gameState, encerrarDia, moverPara } = useGame();
@@ -20,7 +20,6 @@ const PainelInvestigador = () => {
   const handleMoverPara = (areaId: string) => {
     const sucesso = moverPara(areaId);
     if (!sucesso) {
-      // Mostrar mensagem de energia insuficiente
       console.log('Energia insuficiente para se mover');
     }
   };
@@ -28,6 +27,15 @@ const PainelInvestigador = () => {
   const getLocalAtualName = () => {
     const area = areas.find(a => a.id === gameState.localAtual);
     return area?.nome || 'Local Desconhecido';
+  };
+
+  const getProgressoArea = (areaId: string) => {
+    const area = areas.find(a => a.id === areaId);
+    if (!area) return 0;
+    const acoesRealizadas = area.acoes.filter(acao => 
+      gameState.acoesRealizadas.includes(acao.id)
+    ).length;
+    return Math.round((acoesRealizadas / area.acoes.length) * 100);
   };
 
   return (
@@ -76,12 +84,13 @@ const PainelInvestigador = () => {
           {/* Mapa de Locais */}
           <div className="mb-12">
             <h3 className="font-garamond text-2xl font-semibold text-noir-light mb-6 text-center">
-              Mapa da Investigação
+              Locais da Investigação
             </h3>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {areasDisponiveis.map((area) => {
                 const isLocalAtual = gameState.localAtual === area.id;
                 const podeSeDeslocar = gameState.energiaAtual > 0 || isLocalAtual;
+                const progresso = getProgressoArea(area.id);
                 
                 return (
                   <div
@@ -124,6 +133,25 @@ const PainelInvestigador = () => {
                       <p className="font-inter text-sm text-gray-400 mb-4">
                         {area.descricao}
                       </p>
+
+                      {/* Barra de progresso */}
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="font-inter text-xs text-gray-500">
+                            Progresso
+                          </span>
+                          <span className="font-inter text-xs text-gray-500">
+                            {progresso}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2">
+                          <div 
+                            className="bg-noir-gold h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${progresso}%` }}
+                          ></div>
+                        </div>
+                      </div>
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <MapPin className="w-4 h-4 text-noir-gold" />
@@ -174,7 +202,7 @@ const PainelInvestigador = () => {
               </h3>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {areas
-                  .filter(area => !gameState.areasDesbloqueadas[area.id as keyof typeof gameState.areasDesbloqueadas])
+                  .filter(area => !gameState.areasDesbloqueadas[area.id as keyof typeof gameState.areasDesbloqueados])
                   .map((area) => (
                     <div
                       key={area.id}
@@ -209,13 +237,14 @@ const PainelInvestigador = () => {
             {gameState.energiaAtual === 0 ? (
               <button
                 onClick={handleEncerrarDia}
-                className="bg-noir-gold hover:bg-noir-gold/90 text-noir-dark px-8 py-3 rounded font-inter font-semibold transition-colors"
+                className="bg-noir-gold hover:bg-noir-gold/90 text-noir-dark px-8 py-3 rounded font-inter font-semibold transition-colors flex items-center space-x-2 mx-auto"
               >
-                Encerrar Dia {gameState.diaAtual}
+                <Calendar className="w-5 h-5" />
+                <span>Encerrar Dia {gameState.diaAtual}</span>
               </button>
             ) : (
               <p className="font-inter text-gray-400">
-                Continue investigando as áreas disponíveis para coletar pistas
+                Continue investigando as áreas disponíveis para coletar evidências
               </p>
             )}
           </div>
